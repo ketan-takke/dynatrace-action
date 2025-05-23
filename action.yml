@@ -1,72 +1,24 @@
-name: 'Publish To Dynatrace'
-description: 'dynatrace to check build metrics'
-inputs: 
-  artifact-name:
-      description: 'artifact name'
-      required: true
-      type: string 
+name: 'Publish Event To Dynatrace'
+description: 'Send build event to dynatrace'
 runs:
  using: 'composite'
  steps:
-      - name: Inform Dynatrace about a successful build
-        if: ${{ success() }}
+      - name: Inform Dynatrace Build Execution
         uses: dynatrace-oss/dynatrace-github-action@v9
         with:
           url: '${{ env.DT_URL }}'
           token: '${{ env.DT_TOKEN }}'
-          metrics: |
-            - metric: "github.build.total"
-              value: "1.0"
-              dimensions:
-                project: "${{ github.repository }}"
-                branch: "${{ github.ref }}"
-                event: "${{ github.event_name }}"
-                owner: BHGitOps
-            - metric: "github.build.success"
-              value: "1.0"
-              dimensions:
-                project: "${{ github.repository }}"
-                branch: "${{ github.ref }}"
-                event: "${{ github.event_name }}"
-                owner: BHGitOps
           events: |
-            - title: "Successful Build"
+            - title: "Github Build"
               type: CUSTOM_INFO    
-              description: "GitHub project ${{ github.repository }} was successfully built"
+              description: "GitHub project ${{ github.repository }} was Executed"
               source: GitHub
-              dimensions:
+              entity-selector: "type(SERVICE),tag(github-build-monitor)"
+              properties:
                 project: "${{ github.repository }}"
                 branch: "${{ github.ref }}"
                 event: "${{ github.event_name }}"
-                owner: BHGitOps
-      - name: Inform Dynatrace about a failed build 
-        if: ${{ failure() }}
-        uses: dynatrace-oss/dynatrace-github-action@v9
-        with:
-          url: '${{ env.DT_URL }}'
-          token: '${{ env.DT_TOKEN }}'
-          metrics: |
-            - metric: "github.build.total"
-              value: "1.0"
-              dimensions:
-                project: "${{ github.repository }}"
-                branch: "${{ github.ref }}"
-                event: "${{ github.event_name }}"
-                owner: BHGitOps
-            - metric: "github.build.fails"
-              value: "1.0"
-              dimensions:
-                project: "${{ github.repository }}"
-                branch: "${{ github.ref }}"
-                event: "${{ github.event_name }}"
-                owner: BHGitOps
-          events: |
-            - title: "Failed build"
-              type: CUSTOM_INFO    
-              description: "GitHub project ${{ github.repository }} build failed!"
-              source: GitHub
-              dimensions:
-                project: "${{ github.repository }}"
-                branch: "${{ github.ref }}"
-                event: "${{ github.event_name }}"
-                owner: BHGitOps      
+                workflow: "${{ github.workflow }}"
+                runId: "${{ github.run_id }}"
+                actor: "${{ github.actor }}"
+                owner: "${{ github.repository_owner }}"
